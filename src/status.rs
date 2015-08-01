@@ -45,7 +45,7 @@ pub struct Statuses<'repo> {
 }
 
 /// An iterator over the statuses in a `Statuses` instance.
-pub struct StatusIter<'statuses> {
+pub struct IntoIter<'statuses> {
     statuses: &'statuses Statuses<'statuses>,
     range: Range<usize>,
 }
@@ -253,8 +253,8 @@ impl<'repo> Statuses<'repo> {
     }
 
     /// Returns an iterator over the statuses in this list.
-    pub fn iter(&self) -> StatusIter {
-        StatusIter {
+    pub fn iter(&self) -> IntoIter {
+        IntoIter {
             statuses: self,
             range: 0..self.len(),
         }
@@ -275,19 +275,28 @@ impl<'repo> Drop for Statuses<'repo> {
     }
 }
 
-impl<'a> Iterator for StatusIter<'a> {
+impl<'statuses> IntoIterator for Statuses<'statuses> {
+    type Item = StatusEntry<'statuses>;
+    type IntoIter = IntoIter<'statuses>;
+
+    fn into_iter(self) -> IntoIter<'statuses> {
+        self.iter()
+    }
+}
+
+impl<'a> Iterator for IntoIter<'a> {
     type Item = StatusEntry<'a>;
     fn next(&mut self) -> Option<StatusEntry<'a>> {
         self.range.next().and_then(|i| self.statuses.get(i))
     }
     fn size_hint(&self) -> (usize, Option<usize>) { self.range.size_hint() }
 }
-impl<'a> DoubleEndedIterator for StatusIter<'a> {
+impl<'a> DoubleEndedIterator for IntoIter<'a> {
     fn next_back(&mut self) -> Option<StatusEntry<'a>> {
         self.range.next_back().and_then(|i| self.statuses.get(i))
     }
 }
-impl<'a> ExactSizeIterator for StatusIter<'a> {}
+impl<'a> ExactSizeIterator for IntoIter<'a> {}
 
 impl<'statuses> StatusEntry<'statuses> {
     /// Access the bytes for this entry's corresponding pathname
@@ -392,5 +401,19 @@ mod tests {
         t!(File::create(td.path().join("foo")));
         let status = t!(repo.status_file(Path::new("foo")));
         assert!(status.contains(::STATUS_WT_NEW));
+    }
+
+    #[test]
+    fn iterator() {
+        let mut count = 0i32;
+
+        let (td, repo) = ::test::repo_init();
+        File::create(&td.path().join("foo")).unwrap();
+
+        for status in repo.statuses(None).unwrap() {
+            count += 1;
+        }
+
+        assert_eq!(count, 1);
     }
 }
