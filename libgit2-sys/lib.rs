@@ -1596,6 +1596,7 @@ extern {
                                    refname: *const c_char) -> c_int;
 
     pub fn git_repository_head_detached(repo: *mut git_repository) -> c_int;
+    pub fn git_repository_detach_head(repo: *mut git_repository) -> c_int;
     pub fn git_repository_set_head_detached(repo: *mut git_repository,
                                             commitish: *const git_oid) -> c_int;
     pub fn git_repository_set_bare(repo: *mut git_repository) -> c_int;

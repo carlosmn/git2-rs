@@ -676,6 +676,28 @@ impl Repository {
         }
     }
 
+    /// Detach the HEAD.
+    ///
+    /// If the HEAD is already detached and points to a Commit, 0 is returned.
+    ///
+    /// If the HEAD is already detached and points to a Tag, the HEAD is
+    /// updated into making it point to the peeled Commit, and 0 is returned.
+    ///
+    /// If the HEAD is already detached and points to a non commitish, the HEAD is
+    /// unaltered, and -1 is returned.
+    ///
+    /// Otherwise, the HEAD will be detached and point to the peeled Commit.
+    pub fn detach_head(&self) -> Result<bool, Error> {
+        unsafe {
+            let value = raw::git_repository_detach_head(self.raw);
+            match value {
+                0 => Ok(false),
+                1 => Ok(true),
+                _ => Err(Error::last_error(value).unwrap())
+            }
+        }
+    }
+
     /// Make the repository HEAD directly point to the commit.
     ///
     /// If the provided committish cannot be found in the repository, the HEAD
@@ -2432,6 +2454,16 @@ mod tests {
         let master_oid = repo.revparse_single("master").unwrap().id();
         assert!(repo.set_head_detached(master_oid).is_ok());
         assert_eq!(repo.head().unwrap().target().unwrap(), master_oid);
+    }
+
+    #[test]
+    fn smoke_set_detach_head() {
+        let (_td, repo) = ::test::repo_init();
+
+        let current_oid = repo.head().unwrap().target().unwrap();
+
+        assert!(repo.detach_head().is_ok());
+        assert_eq!(repo.head().unwrap().target().unwrap(), current_oid);
     }
 
     /// create an octopus:
