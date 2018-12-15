@@ -12,7 +12,7 @@ use {ResetType, Signature, Reference, References, Submodule, Blame, BlameOptions
 use {Branches, BranchType, Index, Config, Oid, Blob, BlobWriter, Branch, Commit, Tree};
 use {AnnotatedCommit, MergeOptions, SubmoduleIgnore, SubmoduleStatus, MergeAnalysis, MergePreference};
 use {ObjectType, Tag, Note, Notes, StatusOptions, Statuses, Status, Revwalk};
-use {RevparseMode, RepositoryInitMode, Reflog, IntoCString, Describe};
+use {RevparseMode, RepositoryInitMode, RepositoryItem, Reflog, IntoCString, Describe};
 use {DescribeOptions, TreeBuilder, Diff, DiffOptions, PackBuilder, Odb};
 use build::{RepoBuilder, CheckoutBuilder};
 use stash::{StashApplyOptions, StashCbData, stash_cb};
@@ -2084,6 +2084,38 @@ impl Repository {
             try_call!(raw::git_ignore_path_is_ignored(&mut ignored, self.raw, path));
         }
         Ok(ignored == 1)
+    }
+
+    /// Get the location of a specific repository file or directory
+    ///
+    /// This function will retrieve the path of a specific repository item. It
+    /// will thereby honor things like the repository's common directory,
+    /// gitdir, etc. In case a file path cannot exist for a given item (e.g. the
+    /// working directory of a bare repository), a not-found error is returned.
+    pub fn item_path(&self, item: RepositoryItem) -> Result<String, Error> {
+        let citem = match item {
+            RepositoryItem::Gitdir     => raw::GIT_REPOSITORY_ITEM_GITDIR,
+            RepositoryItem::Workdir    => raw::GIT_REPOSITORY_ITEM_WORKDIR,
+            RepositoryItem::Commondir  => raw::GIT_REPOSITORY_ITEM_COMMONDIR,
+            RepositoryItem::Index      => raw::GIT_REPOSITORY_ITEM_INDEX,
+            RepositoryItem::Objects    => raw::GIT_REPOSITORY_ITEM_OBJECTS,
+            RepositoryItem::Refs       => raw::GIT_REPOSITORY_ITEM_REFS,
+            RepositoryItem::PackedRefs => raw::GIT_REPOSITORY_ITEM_PACKED_REFS,
+            RepositoryItem::Remotes    => raw::GIT_REPOSITORY_ITEM_REMOTES,
+            RepositoryItem::Config     => raw::GIT_REPOSITORY_ITEM_CONFIG,
+            RepositoryItem::Info       => raw::GIT_REPOSITORY_ITEM_INFO,
+            RepositoryItem::Hooks      => raw::GIT_REPOSITORY_ITEM_HOOKS,
+            RepositoryItem::Logs       => raw::GIT_REPOSITORY_ITEM_LOGS,
+            RepositoryItem::Modules    => raw::GIT_REPOSITORY_ITEM_MODULES,
+            RepositoryItem::Worktrees  => raw::GIT_REPOSITORY_ITEM_WORKTREES,
+        };
+
+        let buf = Buf::new();
+        unsafe {
+            try_call!(raw::git_repository_item_path(buf.raw(), self.raw, citem));
+        }
+
+        Ok(str::from_utf8(&buf).unwrap().to_string())
     }
 }
 

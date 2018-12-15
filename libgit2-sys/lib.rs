@@ -1557,6 +1557,26 @@ pub type git_packbuilder_foreach_cb = extern fn(*const c_void, size_t,
 
 pub type git_odb_foreach_cb = extern fn(id: *const git_oid, payload: *mut c_void) -> c_int;
 
+
+git_enum! {
+    pub enum git_repository_item_t {
+	GIT_REPOSITORY_ITEM_GITDIR,
+	GIT_REPOSITORY_ITEM_WORKDIR,
+	GIT_REPOSITORY_ITEM_COMMONDIR,
+	GIT_REPOSITORY_ITEM_INDEX,
+	GIT_REPOSITORY_ITEM_OBJECTS,
+	GIT_REPOSITORY_ITEM_REFS,
+	GIT_REPOSITORY_ITEM_PACKED_REFS,
+	GIT_REPOSITORY_ITEM_REMOTES,
+	GIT_REPOSITORY_ITEM_CONFIG,
+	GIT_REPOSITORY_ITEM_INFO,
+	GIT_REPOSITORY_ITEM_HOOKS,
+	GIT_REPOSITORY_ITEM_LOGS,
+	GIT_REPOSITORY_ITEM_MODULES,
+	GIT_REPOSITORY_ITEM_WORKTREES,
+    }
+}
+
 extern {
     // threads
     pub fn git_libgit2_init() -> c_int;
@@ -1639,6 +1659,9 @@ extern {
 
     pub fn git_repository_reinit_filesystem(repo: *mut git_repository,
                                             recurse_submodules: c_int) -> c_int;
+    pub fn git_repository_item_path(out: *mut git_buf,
+                                    repo: *const git_repository,
+                                    item: git_repository_item_t) -> c_int;
     pub fn git_ignore_add_rule(repo: *mut git_repository,
                                rules: *const c_char) -> c_int;
     pub fn git_ignore_clear_internal_rules(repo: *mut git_repository) -> c_int;

@@ -1271,6 +1271,26 @@ pub enum StashApplyProgress {
     Done,
 }
 
+/// List of items which belong to the git repository layout
+#[allow(missing_docs)]
+#[derive(Debug)]
+pub enum RepositoryItem {
+    Gitdir,
+    Workdir,
+    Commondir,
+    Index,
+    Objects,
+    Refs,
+    PackedRefs,
+    Remotes,
+    Config,
+    Info,
+    Hooks,
+    Logs,
+    Modules,
+    Worktrees,
+}
+
 bitflags! {
     #[allow(missing_docs)]
     pub struct StashApplyFlags: u32 {
